@@ -577,6 +577,7 @@ public void Stop()
   }
   
   ToBePlayed = null;  
+  last_action_ix = -1;
   
 }
 
