@@ -14,6 +14,8 @@ String val;
 
 boolean atDown1 = false, atDown2 = false, atDown3 = false, atDown4 = false, 
         atDown5 = false, atDown6 = false, all_up = true, right_up = true;
+        
+boolean stopFlag;
 
 float up_speed;
 float down_speed;
@@ -566,8 +568,15 @@ void serialEvent(Serial p) {
 
 public void Stop()
 {
+  
   PlayPressed =false;
-
+  if(stopFlag==false)
+  {
+    All();
+    stopFlag=true;
+  }
+  
+  ToBePlayed = null;  
   
 }
 
@@ -575,7 +584,7 @@ public void Play()
 {
    PlayPressed = true;
    File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
-  
+  stopFlag=false;
   File [] fileArray = folder.listFiles(new FilenameFilter() { 
                  public boolean accept(File folder, String filename)
                       { return filename.endsWith(".txt"); }
