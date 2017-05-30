@@ -1,10 +1,13 @@
 import processing.serial.*;
 import controlP5.*;
+import java.io.FilenameFilter;
+import java.io.File;
 
 ControlP5 cp5;
 
 Button b1, b2, b3, b4, b5, b6, playButton, all_button, right_hand;
 DropdownList songList;
+Song ToBePlayed;
 
 Serial myPort;
 String val;
@@ -25,7 +28,8 @@ Song scale = new Song(scaling, new float[] {1, 2, 3, 4, 5, 6, 7});
 //String[] song1Actions = {"1", "2", "3", "4", "5", "6"};
 Song sallyGarden;
 Song alignedBoy;
-Song oldAlignedBoy;
+//Song oldAlignedBoy;
+Song Exp1;
 Song temp;
 
 int SongNumber = 0;
@@ -38,7 +42,7 @@ int last_action_ix = -1;
 String fileName;
 
 float song_speed;
-float[] temp_times;
+float[] scaled_times;
 
 void drawbackground()
 {
@@ -178,7 +182,7 @@ void setup()
   songList = cp5.addDropdownList("SongList");
   DropdownCustomize(songList);
   
-  String portName = Serial.list()[1];
+  String portName = Serial.list()[0];
   myPort = new Serial(this, portName, 115200); 
   //myPort.bufferUntil('\n');
   //println(portName);
@@ -191,7 +195,8 @@ void setup()
   alignedBoy = loadFile("aligned-boy.txt");
   //oldAlignedBoy = loadFile("oldAligned-boy.txt");
   temp = loadFile("sallygarden-first15.txt");
-  println(temp);
+  Exp1 = loadFile("Exp-01-15sec.txt");
+  //println(temp);
   
   //println(temp.actions);
   
@@ -216,7 +221,7 @@ class Song
    float now = millis();
    float offset = (now - start_time)/1000;
    
-   if (offset >= temp_times[last_action_ix+1]){
+   if (offset >= scaled_times[last_action_ix+1]){
      //println(now);
      //println(offset);
      String button_ixs = actions[last_action_ix+1];
@@ -259,15 +264,31 @@ public void trigger_buttons(String ixs)
 
 void DropdownCustomize(DropdownList ddl)
 {
+  File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
+  
+  File [] fileArray = folder.listFiles(new FilenameFilter() { 
+                 public boolean accept(File folder, String filename)
+                      { return filename.endsWith(".txt"); }
+        });
+  ArrayList<String> fileStrings = new ArrayList<String>();
+  
+  
+  for (File temp: fileArray)
+  {
+     fileStrings.add(temp.getName() );
+  }
+  
   ddl.setPosition(350,230)
      .setSize(130, 130)
      .close()
      .setBarHeight(30)
      .setItemHeight(30)
-     .addItem("Scale", 0)
-     .addItem("sallygarden", 1)
-     .addItem("Song2", 2)
-     .addItem("SallyGarden_fitst15", 3)
+     .addItems(fileStrings)
+     //.addItem("Scale", 0)
+     //.addItem("Sallygarden", 1)
+     //.addItem("Aligned-boy", 2)
+     //.addItem("SallyGarden_fitst15", 3)
+     //.addItem("Experiment-01", 4)
      .setCaptionLabel("Choose your song")
      .setColorBackground(color(0))
      .setColorLabel(color(128))
@@ -478,6 +499,7 @@ void draw()
   
   if(PlayPressed == true)
   { 
+    /*
     if(SongNumber == 0)
       last_action_ix = scale.play_scale(last_action_ix, start_time); 
     else if(SongNumber == 1) {
@@ -485,9 +507,17 @@ void draw()
       //fileName = "sallygarden.txt";
       //loadFile(fileName);
     }
+    else if(SongNumber == 2)
+      last_action_ix = alignedBoy.play_scale(last_action_ix, start_time); 
     else if(SongNumber == 3) {
-      last_action_ix = temp.play_scale(last_action_ix, start_time);  
+      last_action_ix = temp.play_scale(last_action_ix, start_time); 
+      
     }
+    else if(SongNumber == 4)
+      last_action_ix = Exp1.play_scale(last_action_ix, start_time);
+      */
+      
+       last_action_ix = ToBePlayed.play_scale(last_action_ix, start_time);
   }
 }
 
@@ -511,7 +541,7 @@ float[] changeSongSpeed(float[] time)
       //println(time[i]);
       //println(new_time[i]);
   }
-  //println(time);
+  println(new_time);
   return new_time;
 }
 
@@ -524,11 +554,49 @@ void serialEvent(Serial p) {
 public void Play()
 {
    PlayPressed = true;
-   
+   File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
+  
+  File [] fileArray = folder.listFiles(new FilenameFilter() { 
+                 public boolean accept(File folder, String filename)
+                      { return filename.endsWith(".txt"); }
+        });
+  ArrayList<String> fileStrings = new ArrayList<String>();
+  
+  
+  for (File temp: fileArray)
+  {
+     fileStrings.add(temp.getName() );
+  }
+  
+  ToBePlayed = loadFile(fileStrings.get(SongNumber));
+  scaled_times = changeSongSpeed(ToBePlayed.times);
+ 
    //println(temp.times);
-   temp_times = changeSongSpeed(temp.times);
-   println(temp.times);
    
+   //scaled_times = changeSongSpeed(temp.times);
+   //println(temp.times);
+   println("SongNumber for Entry#1 is:"+ SongNumber);
+   scaled_times = changeSongSpeed(ToBePlayed.times);
+   /*
+   //old working code here
+   
+   if(SongNumber == 0)
+      scaled_times = changeSongSpeed(scale.times); 
+      
+    else if(SongNumber == 1) {
+      scaled_times = changeSongSpeed(sallyGarden.times); 
+      //fileName = "sallygarden.txt";
+      //loadFile(fileName);
+    }
+    else if(SongNumber == 2)
+      scaled_times = changeSongSpeed(alignedBoy.times);
+    else if(SongNumber == 3) {
+      scaled_times = changeSongSpeed(temp.times); 
+    }
+    else if(SongNumber == 4)
+      scaled_times = changeSongSpeed(Exp1.times); 
+      */
+      
    start_time = millis();
    last_action_ix = -1;
 }
@@ -543,6 +611,7 @@ Song loadFile(String fName)
   String keysPos[] = new String[lines.length];
   String keyActions[] = new String[lines.length];
   
+  //println(lines.length);
   for (int i = 0 ; i < lines.length; i++) {
   //println(lines[i]);
     String[] items = lines[i].split("\t");
