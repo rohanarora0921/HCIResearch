@@ -5,7 +5,7 @@ import java.io.File;
 
 ControlP5 cp5;
 
-Button b1, b2, b3, b4, b5, b6, playButton, all_button, right_hand;
+Button b1, b2, b3, b4, b5, b6, playButton, all_button, right_hand, stop;
 DropdownList songList;
 Song ToBePlayed;
 
@@ -14,6 +14,8 @@ String val;
 
 boolean atDown1 = false, atDown2 = false, atDown3 = false, atDown4 = false, 
         atDown5 = false, atDown6 = false, all_up = true, right_up = true;
+        
+boolean stopFlag;
 
 float up_speed;
 float down_speed;
@@ -179,6 +181,16 @@ void setup()
      //.setView(new CircularButton());
      ;
      
+  stop = cp5.addButton("Stop")
+   //.setValue(0)
+     .setPosition(200,265)
+     .setSize(130,30)
+     //.activateBy(ControlP5.PRESSED)
+     .setColorBackground(color(255))
+     .setColorLabel(color(128))
+     //.setView(new CircularButton());
+     ;
+     
   songList = cp5.addDropdownList("SongList");
   DropdownCustomize(songList);
   
@@ -232,6 +244,8 @@ class Song
      return last_action_ix;
    }
    
+  
+   
 }
 
 public void trigger_buttons(String ixs)
@@ -264,7 +278,7 @@ public void trigger_buttons(String ixs)
 
 void DropdownCustomize(DropdownList ddl)
 {
-  File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
+  File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev03");
   
   File [] fileArray = folder.listFiles(new FilenameFilter() { 
                  public boolean accept(File folder, String filename)
@@ -272,12 +286,13 @@ void DropdownCustomize(DropdownList ddl)
         });
   ArrayList<String> fileStrings = new ArrayList<String>();
   
-  
-  for (File temp: fileArray)
+  if(fileArray!=null)
   {
-     fileStrings.add(temp.getName() );
+    for (File temp: fileArray)
+    {
+       fileStrings.add(temp.getName() );
+    }
   }
-  
   ddl.setPosition(350,230)
      .setSize(130, 130)
      .close()
@@ -551,11 +566,26 @@ void serialEvent(Serial p) {
       //print(inString);
 }
 
+public void Stop()
+{
+  
+  PlayPressed =false;
+  if(stopFlag==false)
+  {
+    All();
+    stopFlag=true;
+  }
+  
+  ToBePlayed = null;  
+  last_action_ix = -1;
+  
+}
+
 public void Play()
 {
    PlayPressed = true;
    File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
-  
+  stopFlag=false;
   File [] fileArray = folder.listFiles(new FilenameFilter() { 
                  public boolean accept(File folder, String filename)
                       { return filename.endsWith(".txt"); }
@@ -576,7 +606,7 @@ public void Play()
    //scaled_times = changeSongSpeed(temp.times);
    //println(temp.times);
    println("SongNumber for Entry#1 is:"+ SongNumber);
-   scaled_times = changeSongSpeed(ToBePlayed.times);
+   //scaled_times = changeSongSpeed(ToBePlayed.times);
    /*
    //old working code here
    
