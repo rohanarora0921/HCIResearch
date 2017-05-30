@@ -1,5 +1,6 @@
 import processing.serial.*;
 import controlP5.*;
+import themidibus.*; //Import the library
 import java.io.FilenameFilter;
 import java.io.File;
 
@@ -14,7 +15,7 @@ String val;
 
 boolean atDown1 = false, atDown2 = false, atDown3 = false, atDown4 = false, 
         atDown5 = false, atDown6 = false, all_up = true, right_up = true;
-        
+
 boolean stopFlag;
 
 float up_speed;
@@ -25,7 +26,7 @@ String inString;
 boolean port_ready = false;
 
 String[] scaling = {"6", "5", "4", "3", "2", "123", "654"};
-Song scale = new Song(scaling, new float[] {1, 2, 3, 4, 5, 6, 7});
+Song scale = new Song(scaling, new float[] {1, 2, 3, 4, 5, 6, 7}, new String[] {"1", "2"});
 
 //String[] song1Actions = {"1", "2", "3", "4", "5", "6"};
 Song sallyGarden;
@@ -45,6 +46,8 @@ String fileName;
 
 float song_speed;
 float[] scaled_times;
+
+MidiBus myBus; // The MidiBus
 
 void drawbackground()
 {
@@ -90,6 +93,8 @@ void setup()
   frameRate(30);
   
   cp5 = new ControlP5(this);
+  
+  myBus = new MidiBus(this, -1, "SimpleSynth virtual input"); 
   
   b1 = cp5.addButton("First")
      //.setValue(0)
@@ -194,7 +199,7 @@ void setup()
   songList = cp5.addDropdownList("SongList");
   DropdownCustomize(songList);
   
-  String portName = Serial.list()[0];
+  String portName = Serial.list()[1];
   myPort = new Serial(this, portName, 115200); 
   //myPort.bufferUntil('\n');
   //println(portName);
@@ -207,7 +212,7 @@ void setup()
   alignedBoy = loadFile("aligned-boy.txt");
   //oldAlignedBoy = loadFile("oldAligned-boy.txt");
   temp = loadFile("sallygarden-first15.txt");
-  Exp1 = loadFile("Exp-01-15sec.txt");
+  Exp1 = loadFile("Exp-01-short.txt");
   //println(temp);
   
   //println(temp.actions);
@@ -218,10 +223,12 @@ class Song
 {
   String[] actions;
   float[] times;
-  public Song(String[] a, float[] t)
+  String[] keysPositions;
+  public Song(String[] a, float[] t, String[] k)
   {
     actions = a;
     times = t;
+    keysPositions = k;
   }
   
   public int play_scale(int last_action_ix, float start_time){
@@ -236,15 +243,14 @@ class Song
    if (offset >= scaled_times[last_action_ix+1]){
      //println(now);
      //println(offset);
-     String button_ixs = actions[last_action_ix+1];
+     String button_ixs = actions[last_action_ix+1]; //position info
      trigger_buttons(button_ixs);
+     playMIDI(keysPositions[last_action_ix+1]);
      return last_action_ix + 1;
    }
    else{
      return last_action_ix;
    }
-   
-  
    
 }
 
@@ -278,7 +284,8 @@ public void trigger_buttons(String ixs)
 
 void DropdownCustomize(DropdownList ddl)
 {
-  File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev03");
+  
+  File folder = new File("/Users/vanchan/Documents/Processing/UI_ver1_processing/UI_ver3_processing_pde");
   
   File [] fileArray = folder.listFiles(new FilenameFilter() { 
                  public boolean accept(File folder, String filename)
@@ -293,12 +300,13 @@ void DropdownCustomize(DropdownList ddl)
        fileStrings.add(temp.getName() );
     }
   }
+  
   ddl.setPosition(350,230)
      .setSize(130, 130)
      .close()
      .setBarHeight(30)
      .setItemHeight(30)
-     .addItems(fileStrings)
+     .setItems(fileStrings)
      //.addItem("Scale", 0)
      //.addItem("Sallygarden", 1)
      //.addItem("Aligned-boy", 2)
@@ -514,25 +522,23 @@ void draw()
   
   if(PlayPressed == true)
   { 
-    /*
-    if(SongNumber == 0)
-      last_action_ix = scale.play_scale(last_action_ix, start_time); 
-    else if(SongNumber == 1) {
-      last_action_ix = sallyGarden.play_scale(last_action_ix, start_time); 
-      //fileName = "sallygarden.txt";
-      //loadFile(fileName);
-    }
-    else if(SongNumber == 2)
-      last_action_ix = alignedBoy.play_scale(last_action_ix, start_time); 
-    else if(SongNumber == 3) {
-      last_action_ix = temp.play_scale(last_action_ix, start_time); 
+    //if(SongNumber == 0)
+    //  last_action_ix = scale.play_scale(last_action_ix, start_time); 
+    //else if(SongNumber == 1) {
+    //  last_action_ix = sallyGarden.play_scale(last_action_ix, start_time); 
+    //  //fileName = "sallygarden.txt";
+    //  //loadFile(fileName);
+    //}
+    //else if(SongNumber == 2)
+    //  last_action_ix = alignedBoy.play_scale(last_action_ix, start_time); 
+    //else if(SongNumber == 3) {
+    //  last_action_ix = temp.play_scale(last_action_ix, start_time); 
       
-    }
-    else if(SongNumber == 4)
-      last_action_ix = Exp1.play_scale(last_action_ix, start_time);
-      */
-      
-       last_action_ix = ToBePlayed.play_scale(last_action_ix, start_time);
+    //}
+    //else if(SongNumber == 4)
+    //  last_action_ix = Exp1.play_scale(last_action_ix, start_time);
+    
+    last_action_ix = ToBePlayed.play_scale(last_action_ix, start_time);
   }
 }
 
@@ -584,48 +590,44 @@ public void Stop()
 public void Play()
 {
    PlayPressed = true;
-   File folder = new File("C:/Users/rohan/Desktop/HCI RESEARCH/Flute Project/Phase 1/processing/UI_ver3_processing_pdev02");
-  stopFlag=false;
-  File [] fileArray = folder.listFiles(new FilenameFilter() { 
+   
+   File folder = new File("/Users/vanchan/Documents/Processing/UI_ver1_processing/UI_ver3_processing_pde");
+   stopFlag=false;
+   File [] fileArray = folder.listFiles(new FilenameFilter() { 
                  public boolean accept(File folder, String filename)
                       { return filename.endsWith(".txt"); }
         });
-  ArrayList<String> fileStrings = new ArrayList<String>();
+   ArrayList<String> fileStrings = new ArrayList<String>();
   
   
-  for (File temp: fileArray)
-  {
-     fileStrings.add(temp.getName() );
-  }
+   for (File temp: fileArray)
+   {
+      fileStrings.add(temp.getName() );
+   }
   
-  ToBePlayed = loadFile(fileStrings.get(SongNumber));
-  scaled_times = changeSongSpeed(ToBePlayed.times);
- 
+   ToBePlayed = loadFile(fileStrings.get(SongNumber));
+   scaled_times = changeSongSpeed(ToBePlayed.times);
+   
    //println(temp.times);
    
    //scaled_times = changeSongSpeed(temp.times);
    //println(temp.times);
-   println("SongNumber for Entry#1 is:"+ SongNumber);
-   //scaled_times = changeSongSpeed(ToBePlayed.times);
-   /*
-   //old working code here
    
-   if(SongNumber == 0)
-      scaled_times = changeSongSpeed(scale.times); 
+   //if(SongNumber == 0)
+   //   scaled_times = changeSongSpeed(scale.times); 
+   // else if(SongNumber == 1) {
+   //   scaled_times = changeSongSpeed(sallyGarden.times); 
+   //   //fileName = "sallygarden.txt";
+   //   //loadFile(fileName);
+   // }
+   // else if(SongNumber == 2)
+   //   scaled_times = changeSongSpeed(alignedBoy.times);
+   // else if(SongNumber == 3) {
+   //   scaled_times = changeSongSpeed(temp.times); 
+   // }
+   // else if(SongNumber == 4)
+   //   scaled_times = changeSongSpeed(Exp1.times); 
       
-    else if(SongNumber == 1) {
-      scaled_times = changeSongSpeed(sallyGarden.times); 
-      //fileName = "sallygarden.txt";
-      //loadFile(fileName);
-    }
-    else if(SongNumber == 2)
-      scaled_times = changeSongSpeed(alignedBoy.times);
-    else if(SongNumber == 3) {
-      scaled_times = changeSongSpeed(temp.times); 
-    }
-    else if(SongNumber == 4)
-      scaled_times = changeSongSpeed(Exp1.times); 
-      */
       
    start_time = millis();
    last_action_ix = -1;
@@ -666,7 +668,7 @@ Song loadFile(String fName)
   
   //println(times);
   //println(times);
-  Song newSong = new Song(keyActions, times);
+  Song newSong = new Song(keyActions, times, keysPos);
   return newSong;
 }
 
@@ -705,4 +707,67 @@ String Pos2Actions(String prePos, String proPos)
   }  
   
   return actions;
+}
+
+int getPitch(String pos)
+{
+  //println(pos);
+  int pitch;
+  if(pos.equals("123000") || pos.equals("123006"))
+    pitch = 60;
+  //else if(pos.equals("110000"))
+  else if(pos.substring(0, 4).equals("1200"))
+    pitch = 62;
+  //else if(pos.equals("100000"))
+  else if(pos.substring(0, 3).equals("100"))
+    pitch = 64;
+  else if(pos.equals("023000"))
+    pitch = 65;
+  else if(pos.equals("123456") || pos.equals("023456"))
+    pitch = 55;
+  else if(pos.equals("123450"))
+    pitch = 57;
+  else if(pos.equals("123400"))
+    pitch = 59;
+  else if(pos.charAt(0) == '0' && pos.charAt(1) == '2' && pos.charAt(2) == '3')
+  {
+    pitch = 66;
+    //println("011xxx");
+  }
+  else if(pos.charAt(0) == '0' && pos.charAt(1) == '2' )
+  {
+    pitch = 65;
+    //println("01xxxx");
+  }
+  else
+  {
+    pitch = 0;
+    //println("else");
+    //velocity = 0;
+  }
+  return pitch;
+}
+
+void playMIDI(String pos)
+{
+  println(pos);
+  int channel = 0;
+  int pitch;
+  int velocity = 127;
+  
+  pitch = getPitch(pos);
+  if(pitch == 0)
+  {
+    velocity = 0;
+  }
+    
+  myBus.sendNoteOn(channel, pitch, 0); 
+  myBus.sendNoteOn(channel, pitch, velocity); // Send a Midi noteOn
+  
+  int number = 0;
+  int value = 90;
+
+  myBus.sendControllerChange(channel, number, value);
+  
+  //pitches = append(des_pitches, pitch);
 }
